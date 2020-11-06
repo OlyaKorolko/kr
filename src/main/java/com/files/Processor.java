@@ -1,25 +1,22 @@
 package com.files;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static java.lang.Double.parseDouble;
 
 public class Processor {
     private User user;
     private boolean logged = false;
 
     private Map<String, User> users;
-    private Map<Integer, List<Product>> products;
+    private Map<Integer, Product> products;
+    private Map<String, List<Product>> categories;
+
 
     public Processor() {
         users = new HashMap<>();
         products = new HashMap<>();
+        categories = new HashMap<>();
         user = new User();
     }
 
@@ -47,12 +44,20 @@ public class Processor {
         this.users = users;
     }
 
-    public Map<Integer, List<Product>> getProducts() {
+    public Map<Integer, Product> getProducts() {
         return products;
     }
 
-    public void setProducts(Map<Integer, List<Product>> products) {
+    public void setProducts(Map<Integer, Product> products) {
         this.products = products;
+    }
+
+    public Map<String, List<Product>> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Map<String, List<Product>> categories) {
+        this.categories = categories;
     }
 
     public static File createFile(String fileName) throws CustomException {
@@ -63,29 +68,42 @@ public class Processor {
         }
     }
 
-    public Map<String, User> deserializeToListOfUsers(BufferedReader in)
+    public Map<String, User> deserializeToListOfUsers(Scanner in)
             throws CustomException {
         try {
-            return in.lines().map(
-                    line -> {
-                        String[] x = setPattern().split(line);
-                        return new User(x[0], x[1], x[2], x[3], x[4], false);
-                    })
-                    .filter(line -> line.getRole().equalsIgnoreCase("USER") || line.getRole().equalsIgnoreCase("ADMIN"))
-                    .collect(Collectors.toMap(User::getUserName, Function.identity()));
-        } catch (Exception ex) {
+            while (in.hasNext()) {
+                String[] info = in.nextLine().split(" ");
+                if (!(info[4].equalsIgnoreCase("ADMIN") || info[4].equalsIgnoreCase("USER")) || users.containsKey(info[0])) {
+                    throw new CustomException("Invalid input data");
+                }
+                users.put(info[0], new User(info[0], info[1], info[2], info[3], info[4], false));
+            }
+            return users;
+        } catch (NumberFormatException ex) {
             throw new CustomException("Parsing file failed.");
         }
     }
 
-    public Map<Integer, Product> deserializeToListOfProducts(BufferedReader in)
+    public Map<Integer, Product> deserializeToListOfProducts(Scanner in)
             throws CustomException {
         try {
-            return in.lines().map(line -> {
-                String[] x = setPattern().split(line);
-                return new Product(Integer.parseInt(x[0]), x[1], LocalDate.parse(x[2]), x[3], parseDouble(x[4]));
-            })
-                    .collect(Collectors.toMap(Product::getNumber, Function.identity()));
+            while (in.hasNext()) {
+                String[] info = in.nextLine().split(" ");
+                int id = Integer.parseInt(info[0]);
+                double frequency = Double.parseDouble(info[4]);
+                Product pr = new Product(id, info[1], LocalDate.parse(info[2]), info[3], frequency);
+                if (products.containsKey(id)) {
+                    products.get(id).getCategoryAndFrequencyOfSearch().put(info[3], frequency);
+                } else {
+                    products.put(id, pr);
+                }
+                if (!categories.containsKey(info[3])) {
+                    categories.put(info[3], new ArrayList<>());
+                }
+                categories.get(info[3]).add(pr);
+
+            }
+            return products;
         } catch (Exception ex) {
             throw new CustomException("Parsing file failed.");
         }
@@ -102,32 +120,33 @@ public class Processor {
     }
 
     public void printAllEntriesAboutProducts() {
-        for (List<Product> products : products.values()) {
-            for (Product product: products) {
-                System.out.println(product.toString());
-            }
+        for (Product product : products.values()) {
+            System.out.println(product.toString());
         }
         System.out.println();
     }
 
-    /*public Product findProductByNumber(int number) {
-        for (Product product : products.values()) {
-            if (number == product.getNumber()) {
-                return product;
-            }
-        }
-        return new Product();
-    }*/
+    public Product findProductByNumber(int number) {
+        return products.get(number);
+    }
 
     public void showStatistics() {
         products.forEach((key, value) ->
-                value.forEach(product -> System.out.println(product.getName() + ": {" + product.getCategory() + ", " +
-                        product.getFrequencyOfSearch() + "}\n")
-                )
+                System.out.println(key + ": " + value.getCategoryAndFrequencyOfSearch() + "\n")
         );
     }
 
-    private Pattern setPattern() {
-        return Pattern.compile(" ");
+    public void topNProductsInCategory(int n, String category) {
+        List<Product> lc = categories.get(category);
+        if (lc != null && lc.size() >= n) {
+            System.out.println(category + ": ");
+            lc.sort(Comparator.comparing(o -> o.getCategoryAndFrequencyOfSearch().get(category)));
+            for (int i = 0; i < n; i++) {
+                System.out.println(lc.get(lc.size() - i - 1));
+            }
+        } else {
+            System.out.println("Unable to find a valid output.");
+        }
     }
+
 }
