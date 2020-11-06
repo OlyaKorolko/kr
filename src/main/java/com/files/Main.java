@@ -6,25 +6,27 @@ import java.util.Scanner;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws CustomException {
         if (args.length >= 2) {
+            File file = Processor.createFile(args[0]);
             try (Scanner scan = new Scanner(System.in);
-                 BufferedReader usersReader = new BufferedReader(new FileReader(Processor.createFile(args[0])));
-                 BufferedReader productsReader = new BufferedReader(new FileReader(Processor.createFile(args[1])))) {
+                 Scanner usersReader = new Scanner(file);
+                 Scanner productsReader = new Scanner(Processor.createFile(args[1]));
+                 FileWriter out = new FileWriter(file, true)) {
                 Processor processor = new Processor();
                 processor.setUsers(processor.deserializeToListOfUsers(usersReader));
                 processor.setProducts(processor.deserializeToListOfProducts(productsReader));
 
-                if (processor.getUsers().size() != 0) {
+                if (processor.getUsers().size() != 0 || processor.getProducts().size() != 0) {
                     showMenu();
                     int input;
                     do {
                         System.out.println("Enter the number of request: ");
                         input = scan.nextInt();
-                        processRequest(scan, processor, input, args);
+                        processRequest(scan, processor, input, out);
                     } while (input != 7);
                 } else {
-                    System.out.println("User file is empty.");
+                    System.out.println("No source data available to read from.");
                 }
             } catch (CustomException | IOException e) {
                 System.out.println(e.getMessage());
@@ -45,29 +47,25 @@ public class Main {
         System.out.println();
     }
 
-    public static void processRequest(Scanner scan, Processor processor, int input, String[] args)
+    public static void processRequest(Scanner scan, Processor processor, int input, FileWriter out)
             throws CustomException, IOException {
-        FileWriter out = new FileWriter(Processor.createFile(args[0]), true);
         switch (input) {
             case 1: {
-                System.out.println("Enter your data:");
+                System.out.println("Enter your registration data (name, login, email, password):");
                 scan.nextLine();
                 String name = scan.nextLine();
                 String login = scan.nextLine();
                 String email = scan.nextLine();
                 String password = scan.nextLine();
                 User user = new User(name, login, email, password, "USER", true);
-                int size = processor.getUsers().size();
-                processor.getUsers().put(user.getUserName(), user);
-                if (size == processor.getUsers().size()) {
-                    throw new CustomException("This user already exists!");
+                if (processor.getUsers().containsKey(user.getUserName())) {
+                    throw new CustomException("User already exists in the database!");
                 }
-                String a = user.toString();
-                out.write(a);
+                out.write("\n" + user.toString());
                 break;
             }
             case 2: {
-                System.out.println("Enter your data:");
+                System.out.println("Enter your login and password:");
                 scan.nextLine();
                 String login = scan.nextLine();
                 String password = scan.nextLine();
@@ -76,7 +74,7 @@ public class Main {
                     processor.setUser(processor.enterSystem(login, password));
                     System.out.println("Logged successfully");
                 } else {
-                    System.out.println("Login/password dont exist.");
+                    System.out.println("Invalid user data.");
                 }
                 break;
             }
@@ -89,11 +87,13 @@ public class Main {
                 if (processor.isLogged() && processor.getUser().getRole().equalsIgnoreCase("ADMIN")) {
                     System.out.println("Enter product number: ");
                     Product prod = processor.findProductByNumber(scan.nextInt());
-                    if (prod.getFrequencyOfSearch() != 0) {
+                    if (prod == null) {
+                        System.out.println("No such product exists.");
+                    } else {
                         System.out.println(prod.toString());
                     }
                 } else {
-                    throw new CustomException("You are not an admin to do that.");
+                    System.out.println("You are not an admin to do that.");
                 }
                 break;
             }
@@ -102,6 +102,16 @@ public class Main {
                 break;
             }
             case 6: {
+                try {
+                    System.out.println("Enter the number of products:");
+                    int n = scan.nextInt();
+                    System.out.println("Enter category: ");
+                    scan.nextLine();
+                    String category = scan.nextLine();
+                    processor.topNProductsInCategory(n, category);
+                } catch (NumberFormatException e) {
+                    System.out.println(e.getMessage());
+                }
                 break;
             }
             case 7: {
