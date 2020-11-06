@@ -8,10 +8,14 @@ public class User {
     private String email;
     private String password;
     private String role;
-    private boolean logged;
+    private boolean logged = false;
 
     public User() {
-
+        this.userName = "";
+        this.login = "";
+        this.email = "";
+        this.password = "";
+        this.role = "USER";
     }
 
     public User(String userName, String login, String email, String password, String role, boolean logged) {
@@ -77,7 +81,7 @@ public class User {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return role == user.role &&
+        return role.equals(user.role) &&
                 Objects.equals(userName, user.userName) &&
                 Objects.equals(login, user.login) &&
                 Objects.equals(email, user.email) &&
