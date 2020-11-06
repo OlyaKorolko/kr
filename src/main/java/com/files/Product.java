@@ -1,23 +1,23 @@
 package com.files;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class Product {
     private int number;
     private String name;
     private LocalDate dateOfArrival;
-    private String category;
-    private double frequencyOfSearch;
+    private Map<String, Double> categoryAndFrequencyOfSearch;
 
-    public double getFrequencyOfSearch() {
-        return frequencyOfSearch;
+    Product(int number, String name, LocalDate dateOfArrival, String category, double frequencyOfSearch) {
+        this.number = number;
+        this.name = name;
+        this.dateOfArrival = dateOfArrival;
+        this.categoryAndFrequencyOfSearch = new HashMap<>();
+        categoryAndFrequencyOfSearch.put(category, frequencyOfSearch);
     }
-
-    public void setFrequencyOfSearch(double frequencyOfSearch) {
-        this.frequencyOfSearch = frequencyOfSearch;
-    }
-
 
     public int getNumber() {
         return number;
@@ -43,24 +43,12 @@ public class Product {
         this.dateOfArrival = dateOfArrival;
     }
 
-    public String getCategory() {
-        return category;
+    public Map<String, Double> getCategoryAndFrequencyOfSearch() {
+        return categoryAndFrequencyOfSearch;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    Product(int number, String name, LocalDate dateOfArrival, String category, double frequencyOfSearch) {
-        this.number = number;
-        this.name = name;
-        this.dateOfArrival = dateOfArrival;
-        this.category = category;
-        this.frequencyOfSearch = frequencyOfSearch;
-    }
-
-    Product() {
-
+    public void setCategoryAndFrequencyOfSearch(Map<String, Double> categoryAndFrequencyOfSearch) {
+        this.categoryAndFrequencyOfSearch = categoryAndFrequencyOfSearch;
     }
 
     @Override
@@ -71,17 +59,21 @@ public class Product {
         return number == product.number &&
                 Objects.equals(name, product.name) &&
                 Objects.equals(dateOfArrival, product.dateOfArrival) &&
-                Objects.equals(category, product.category) &&
-                Objects.equals(frequencyOfSearch, product.frequencyOfSearch);
+                Objects.equals(categoryAndFrequencyOfSearch, product.categoryAndFrequencyOfSearch);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(number, name, dateOfArrival, category, frequencyOfSearch);
+        return Objects.hash(number, name, dateOfArrival, categoryAndFrequencyOfSearch);
     }
 
     @Override
     public String toString() {
-        return number + " " + name + " " + dateOfArrival + " " + category + " " + frequencyOfSearch + " ";
+        return "[ " +
+                "number = " + number +
+                ", name = '" + name + '\'' +
+                ", dateOfArrival = " + dateOfArrival +
+                ", categoryAndFrequencyOfSearch = " + categoryAndFrequencyOfSearch +
+                " ]";
     }
 }
